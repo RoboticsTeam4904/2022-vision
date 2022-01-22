@@ -1,0 +1,6 @@
+[submodule "standard-vision"]
+	path = standard-vision
+	url = git@github.com:RoboticsTeam4904/standard-vision.git
+[submodule "vision_tapes"]
+	path = vision_tapes
+	url = git@github.com:countableclouds/vision_tapes.git
