@@ -1,6 +1,9 @@
 use vision_tapes::utility::Point;
 use stdvis_core::{ traits::ImageData, types::Image };
 
+mod utility;
+use utility::Pose;
+
 fn fit_flat_circle(a: Point, b: Point, c: Point) -> Point {
     // algorithm: https://stackoverflow.com/a/4103418/10372825
     assert_eq!(b.z, a.z);
