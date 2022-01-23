@@ -1,4 +1,5 @@
 use vision_tapes::utility::Point;
+use std::f64::consts::PI;
 
 /// A translation with an orientation at the end. For example, the position of a vision pattern and
 /// its orientation relative to our facing direction. 
@@ -6,7 +7,7 @@ use vision_tapes::utility::Point;
 /// Rotations are calcualted in the order yaw, then pitch, then roll
 /// x = horizontal shift, y = vertical height, z = forwards distance
 pub struct Pose {
-    pos: Point,
+    pub pos: Point,
     yaw: f64,
     roll: f64,
     pitch: f64,
@@ -26,8 +27,14 @@ impl Pose {
     }
     /// Create a pose from a look vector and an up vector
     pub fn from_orientation_vectors(fwd_vec: Point, up_vec: Point) -> Self {
-        unimplemented!("the up orientation is not implemented");
-        Self::from_orientation(fwd_vec, 0. /* TODO @tainish rotate the up vector s.t. fwd points in +z; then do it as a 2d problem */)
+        let pose = Self::from_orientation(fwd_vec, 0.);
+        let up_vec = up_vec
+            .rotated(&Point::new(-fwd_vec.z, 0., fwd_vec.x), pose.pitch)
+            .rotated(&Point::new(0., 1., 0.), -pose.yaw);
+        pose.with_roll(up_vec.x.atan2(up_vec.y))
+    }
+    pub fn up(&self) -> Point {
+        Point::new()
     }
     pub fn from_position(pos: Point) -> Self {
         Self::new(pos, 0., 0., 0.)
@@ -50,6 +57,14 @@ impl Pose {
     pub fn with_height(&self, y: f64) -> Self { self.with_pos(self.pos.with_y(y)) }
     /// get a copy of the object with a different distance, but without changing the orientation
     pub fn with_dist(&self, z: f64) -> Self { self.with_pos(self.pos.with_z(z)) }
+
+    /// get a copy of the object with a different yaw, but without changing the position
+    pub fn with_yaw(&self, theta: f64) -> Self { Pose::new(self.pos, theta, self.roll, self.pitch) }
+    /// get a copy of the object with a different roll, but without changing the position
+    pub fn with_roll(&self, theta: f64) -> Self { Pose::new(self.pos, self.yaw, theta, self.pitch) }
+    /// get a copy of the object with a different pitch, but without changing the position
+    pub fn with_pitch(&self, theta: f64) -> Self { Pose::new(self.pos, self.yaw, self.roll, theta) }
+
     /// get a copy of the object `scalar` times further away
     pub fn scaled(&self, scalar: f64) -> Self {
         Self::new(self.pos * scalar, self.yaw, self.roll, self.pitch)

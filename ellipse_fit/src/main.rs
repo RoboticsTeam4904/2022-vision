@@ -15,7 +15,7 @@ fn fit_flat_circle(a: Point, b: Point, c: Point) -> Point {
     let det = (a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y);
 
     println!("determinant: {det}");
-    assert!(det.abs() > 1e-4);  // colinear or smt
+    assert!(det.abs() > f64::EPSILON);  // colinear or smt
 
     let cx = (bc * (b.y - c.y) - cd * (a.y - b.y)) / det;
     let cy = (cd * (a.x - b.x) - bc * (b.x - c.x)) / det;
@@ -30,20 +30,20 @@ fn main() {
     println!("Hello, {p:?}");
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub trait Nearby {
+    fn near(self, other: &Self, thresh: f64) -> bool;
+}
+impl Nearby for Point {
+    fn near(self, other: &Point, thresh: f64) -> bool {
+        let delta = self - *other;
+        println!("dist: {}", delta.mag());
+        return delta.squared_mag() <= thresh.powi(2)
+    }
+}
 
-    trait Nearby {
-        fn near(self, other: &Self, thresh: f64) -> bool;
-    }
-    impl Nearby for Point {
-        fn near(self, other: &Point, thresh: f64) -> bool {
-            let delta = self - *other;
-            println!("dist: {}", delta.mag());
-            return delta.squared_mag() <= thresh.powi(2)
-        }
-    }
+#[cfg(test)]
+mod test_circle_fit {
+    use super::*;
 
     #[test]
     fn circle_fit_1() {
@@ -72,5 +72,36 @@ mod tests {
         let b = Point::new(-19.,  33., 0.);
         let c = Point::new(-31.2, -2.74, 0.);
         assert!(fit_flat_circle(a, b, c).near(&Point::new(1503.8, -506.8, 0.), 1e-1));
+    }
+}
+
+#[cfg(test)]
+mod test_pose_rotation {
+    use super::*;
+    use std::f64::consts::{ PI, FRAC_PI_4, FRAC_PI_2, FRAC_PI_6 };
+
+    #[test]
+    /// no roll
+    fn orientation_vec_constructor_1() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::new(look, 0., 0., 0.);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(-1., 2., -1.));
+        assert!(pose1.pos.near(&pose2.pos, 1e-3));
+    }
+    #[test]
+    /// 180 roll
+    fn orientation_vec_constructor_2() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::new(look, 0., 0., PI);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(1., -2., 1.));
+        assert!(pose1.pos.near(&pose2.pos, 1e-3));
+    }
+    #[test]
+    /// 90 roll
+    fn orientation_vec_constructor_3() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::new(look, 0., 0., -FRAC_PI_6);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 1., -1.));
+        assert!(pose1.pos.near(&pose2.pos, 1e-3));
     }
 }
