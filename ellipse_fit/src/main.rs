@@ -81,36 +81,75 @@ mod test_pose_rotation {
     use std::f64::consts::{ PI, FRAC_PI_4, FRAC_PI_2, FRAC_PI_6 };
 
     #[test]
-    /// test up bijection
-    fn up_bijection() {
-        let look = Point::new(0., 0., 1.);
-        let up = Point::new(1., 0., 0.).normalize();
-        assert!(up == Pose::from_orientation_vectors(look, up).up())
+    fn up_bijection_1() {
+        let look = Point::new(0., 1., 0.);
+        let up = Point::new(1., 0., 1.).normalize();
+        assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
+    }
+    #[test]
+    fn up_bijection_2() {
+        let look = Point::new(1., 1., 0.);
+        let up = Point::new(1., -1., 0.).normalize();
+        assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
+    }
+    #[test]
+    fn up_bijection_3() {
+        let look = Point::new(1., 1., 0.);
+        let up = Point::new(1., -1., 1.).normalize();
+        assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
+    }
+    #[test]
+    fn up_bijection_4() {
+        let look = Point::new(1., 1., 1.);
+        let up = Point::new(-1., 2., -1.).normalize();
+        assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
+    }
+    #[test]
+    fn up_bijection_5() {
+        let look = Point::new(1., 1., 1.);
+        let up = Point::new(-1., 1., 0.).normalize();
+        assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
     }
 
 
     #[test]
     /// no roll
     fn orientation_vec_constructor_1() {
-        let look = Point::new(1., 1., 1.);
+        let look = Point::new(0., 1., 0.);
         let pose1 = Pose::from_orientation(look, 0.);
-        let pose2 = Pose::from_orientation_vectors(look, Point::new(-1., 2., -1.));
-        assert!(pose1.pos.near(&pose2.pos, 1e-3));
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 0., 1.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
     #[test]
     /// 180 roll
     fn orientation_vec_constructor_2() {
         let look = Point::new(1., 1., 1.);
         let pose1 = Pose::from_orientation(look, PI);
-        let pose2 = Pose::from_orientation_vectors(look, Point::new(1., -2., 1.));
-        assert!(pose1.pos.near(&pose2.pos, 1e-3));
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(1., 1., -2.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
     #[test]
     /// 90 roll
     fn orientation_vec_constructor_3() {
-        let look = Point::new(1., 1., 1.);
-        let pose1 = Pose::from_orientation(look, -FRAC_PI_6);
+        let look = Point::new(-1., -1., 2.);
+        let pose1 = Pose::from_orientation(look, FRAC_PI_2);
         let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 1., -1.));
-        assert!(pose1.pos.near(&pose2.pos, 1e-3));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
+    }
+    #[test]
+    /// whack
+    fn orientation_vec_constructor_4() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::from_orientation(look, 0.);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(-1., -1., 2.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
+    }
+    #[test]
+    /// whack
+    fn orientation_vec_constructor_5() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::from_orientation(look, -5. * FRAC_PI_6);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 1., -1.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
 }
