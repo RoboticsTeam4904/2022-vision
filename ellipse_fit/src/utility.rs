@@ -6,6 +6,7 @@ use std::f64::consts::PI;
 /// 
 /// Rotations are calcualted in the order yaw, then pitch, then roll
 /// x = horizontal shift, y = vertical height, z = forwards distance
+#[derive(Debug)]
 pub struct Pose {
     pub pos: Point,
     yaw: f64,
@@ -14,6 +15,10 @@ pub struct Pose {
 }
 
 impl Pose {
+    pub fn debug(self, msg: &str) -> Self {
+        println!("{} {:?}", msg, self);
+        self
+    }
     // constructors
     pub fn new(pos: Point, yaw: f64, roll: f64, pitch: f64) -> Pose {
         Pose { pos, yaw, pitch, roll }
@@ -22,19 +27,22 @@ impl Pose {
                         yaw: f64, roll: f64, pitch: f64) -> Self {
         Self::new(Point::new(shift, height, dist), yaw, roll, pitch)
     }
-    pub fn from_orientation(fwd: Point, roll: f64) -> Self {
-        Self::from_numbers(0., 0., 0., fwd.x.atan2(fwd.z), roll, fwd.y.atan2(fwd.x.hypot(fwd.z)) )
+    pub fn from_orientation(look: Point, roll: f64) -> Self {
+        Self::from_numbers(0., 0., 0., look.x.atan2(look.z), roll, look.y.atan2(look.x.hypot(look.z)) )
     }
     /// Create a pose from a look vector and an up vector
-    pub fn from_orientation_vectors(fwd_vec: Point, up_vec: Point) -> Self {
-        let pose = Self::from_orientation(fwd_vec, 0.);
-        let up_vec = up_vec
-            .rotated(&Point::new(-fwd_vec.z, 0., fwd_vec.x), pose.pitch)
-            .rotated(&Point::new(0., 1., 0.), -pose.yaw);
+    pub fn from_orientation_vectors(look: Point, up: Point) -> Self {
+        let pose = Self::from_orientation(look, 0.);
+        let up_vec = up
+            .rotated(&Point::new(-look.z, 0., look.x), pose.pitch).debug("construct 1")
+            .rotated(&Point::new(0., 1., 0.), -pose.yaw).debug("construct 2");
+        println!("roll angle: {}", up_vec.x.atan2(up_vec.y) / PI);
         pose.with_roll(up_vec.x.atan2(up_vec.y))
     }
     pub fn up(&self) -> Point {
-        Point::new()
+        let perp = Point::new(self.yaw.cos(), 0., self.yaw.sin()).debug("up/perp");
+        let up = Point::new(0., 1., 0.).rotated(&perp, self.pitch).debug("up/up");
+        up.rotated(&(perp * up).debug("up cross perp"), self.roll).normalize()
     }
     pub fn from_position(pos: Point) -> Self {
         Self::new(pos, 0., 0., 0.)
