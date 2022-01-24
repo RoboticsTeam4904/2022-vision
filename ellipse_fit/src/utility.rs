@@ -58,8 +58,6 @@ impl Pose {
         up.rotated(&(up * perp), self.roll).normalize()
     }
     pub fn look(&self) -> Point {
-        println!("original: {:?}", self);
-        println!("returning {} {} {}", self.yaw.sin(), self.yaw.cos(), self.pitch.sin());
         Point::new(self.yaw.sin()*self.pitch.cos(), self.yaw.cos()*self.pitch.cos(), self.pitch.sin()).normalize()
     }
 
@@ -79,13 +77,28 @@ impl Pose {
     /// get a copy of the object with a different pitch, but without changing the position
     pub fn with_pitch(&self, theta: f64) -> Self { Pose::new(self.pos, self.yaw, self.roll, theta) }
 
+    /// check if two poses are within epsilon of each other (both delta pos and each orientation)
+    pub fn like(&self, other: &Self, epsilon: f64) -> bool {
+        (self.pos - other.pos).mag() <= epsilon &&
+        (self.yaw - other.yaw).abs() <= epsilon && 
+        (self.roll - other.roll).abs() <= epsilon &&
+        (self.pitch - other.pitch).abs() <= epsilon
+    }
+
     /// get a copy of the object `scalar` times further away
     pub fn scaled(&self, scalar: f64) -> Self {
         Self::new(self.pos * scalar, self.yaw, self.roll, self.pitch)
     }
-    ///// get the sum pose of another pose attached to the face of this one
-    //pub fn chained(&self, next: &Pose) -> Pose {
-    //    let pos = next.pos
-    //    Self::new(self.yaw + next.yaw, self.roll + next.roll, self.pitch + next.pitch)
-    //}
+    /// get the sum pose of another pose attached to the face of this one
+    pub fn chain(&self, next: &Pose) -> Pose {
+        let rot = Rotation3::face_towards(
+            &Vector3::new(self.look().x, self.look().z, self.look().y),
+            &Vector3::new(self.up().x,   self.up().z,   self.up().y)
+        );
+        println!("rotation {:?}", rot.euler_angles());
+        let pos = rot * Vector3::new(next.pos.x, next.pos.z, next.pos.y);
+        let pos = Point::new(pos.x, pos.y, pos.z);
+        Self::new(pos, self.yaw + next.yaw, self.roll + next.roll, self.pitch + next.pitch)
+    }
 }
+

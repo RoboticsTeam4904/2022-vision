@@ -200,4 +200,29 @@ mod test_pose_rotation {
         let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 0., -1.));
         assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
+
+    #[test]
+    fn chain_poses_orientation_identity_left() {
+        let pose1 = Pose::from_orientation(Point::new(0., 1., 0.), 0.);
+        let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
+        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
+    }
+    #[test]
+    fn chain_poses_orientation_identity_right() {
+        let pose1 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
+        let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 0.);
+        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
+    }
+    #[test]
+    fn chain_poses_orientation_identity_roll() {
+        let pose1 = Pose::from_orientation(Point::new(1., 1., 1.), 1.);
+        let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 2.);
+        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 3.), 1e-6));
+    }
+    #[test]
+    fn chain_poses_orientation_identity_offsets_1() {
+        let pose1 = Pose::from_orientation(Point::new(1., 0., 0.), 0.);
+        let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
+        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(2., -1., 1.), 0.), 1e-6));
+    }
 }
