@@ -111,6 +111,42 @@ mod test_pose_rotation {
         assert!(up.near(&Pose::from_orientation_vectors(look, up).up(), 1e-6))
     }
 
+    #[test]
+    fn look_bijection_up() {
+        let look = Point::new(0., 0., 1.).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+    #[test]
+    fn look_bijection_fwd() {
+        let look = Point::new(0., 1., 0.).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+    #[test]
+    fn look_bijection_left() {
+        let look = Point::new(-1., 0., 0.).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+    #[test]
+    fn look_bijection_1() {
+        let look = Point::new(1., 1., 1.).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+    #[test]
+    fn look_bijection_2() {
+        let look = Point::new(1., -1., 1.).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+    #[test]
+    fn look_bijection_3() {
+        let look = Point::new(-200., 1.4934, 23.2399).normalize();
+        assert!(look.near(&Pose::from_orientation(look, 1.2).look(), 1e-6));
+    }
+
+    #[test]
+    /// test scaling
+    fn scaled() {
+        assert!(Pose::from_pos(Point::new(1., 1., 2.)).scaled(-3.).pos.near(&Point::new(-3., -3., -6.), 1e-6));
+    }
 
     #[test]
     /// no roll
@@ -137,7 +173,6 @@ mod test_pose_rotation {
         assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
     #[test]
-    /// whack
     fn orientation_vec_constructor_4() {
         let look = Point::new(1., 1., 1.);
         let pose1 = Pose::from_orientation(look, 0.);
@@ -145,11 +180,24 @@ mod test_pose_rotation {
         assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
     #[test]
-    /// whack
     fn orientation_vec_constructor_5() {
         let look = Point::new(1., 1., 1.);
         let pose1 = Pose::from_orientation(look, -5. * FRAC_PI_6);
         let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 1., -1.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
+    }
+    #[test]
+    fn orientation_vec_constructor_nonortho_up() {
+        let look = Point::new(1., 1., 1.);
+        let pose1 = Pose::from_orientation(look, 0.);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 0., 1.));
+        assert!(pose1.up().near(&pose2.up(), 1e-3));
+    }
+    #[test]
+    fn orientation_vec_constructor_nonortho_down() {
+        let look = Point::new(10., -8., 1.);
+        let pose1 = Pose::from_orientation(look, PI);
+        let pose2 = Pose::from_orientation_vectors(look, Point::new(0., 0., -1.));
         assert!(pose1.up().near(&pose2.up(), 1e-3));
     }
 }

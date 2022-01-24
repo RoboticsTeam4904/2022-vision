@@ -1,5 +1,7 @@
 use vision_tapes::utility::Point;
 use std::f64::consts::PI;
+extern crate nalgebra as na;
+use na::{ Vector3, Rotation3 };
 
 /// A translation with an orientation at the end. For example, the position of a vision pattern and
 /// its orientation relative to our facing direction. 
@@ -38,12 +40,7 @@ impl Pose {
             .rotated(&Point::new(0., 0., 1.), pose.yaw);
         pose.with_roll(up_vec.x.atan2(up_vec.z))
     }
-    pub fn up(&self) -> Point {
-        let perp = Point::new(self.yaw.cos(), -self.yaw.sin(), 0.);
-        let up = Point::new(0., 0., 1.).rotated(&perp, self.pitch);
-        up.rotated(&(up * perp), self.roll).normalize()
-    }
-    pub fn from_position(pos: Point) -> Self {
+    pub fn from_pos(pos: Point) -> Self {
         Self::new(pos, 0., 0., 0.)
     }
 
@@ -55,6 +52,16 @@ impl Pose {
     /// get the forwards (y-direction) offset of the object
     pub fn dist(&self)                  -> f64 { self.pos.y }
     /// get a copy of the object with a different position, but without changing the orientation
+    pub fn up(&self) -> Point {
+        let perp = Point::new(self.yaw.cos(), -self.yaw.sin(), 0.);
+        let up = Point::new(0., 0., 1.).rotated(&perp, self.pitch);
+        up.rotated(&(up * perp), self.roll).normalize()
+    }
+    pub fn look(&self) -> Point {
+        println!("original: {:?}", self);
+        println!("returning {} {} {}", self.yaw.sin(), self.yaw.cos(), self.pitch.sin());
+        Point::new(self.yaw.sin()*self.pitch.cos(), self.yaw.cos()*self.pitch.cos(), self.pitch.sin()).normalize()
+    }
 
     // transforms
     pub fn with_pos(&self, pos: Point) -> Self { Self::new(pos, self.yaw, self.roll, self.pitch) }
@@ -76,9 +83,9 @@ impl Pose {
     pub fn scaled(&self, scalar: f64) -> Self {
         Self::new(self.pos * scalar, self.yaw, self.roll, self.pitch)
     }
-    // TODO
     ///// get the sum pose of another pose attached to the face of this one
     //pub fn chained(&self, next: &Pose) -> Pose {
+    //    let pos = next.pos
     //    Self::new(self.yaw + next.yaw, self.roll + next.roll, self.pitch + next.pitch)
     //}
 }

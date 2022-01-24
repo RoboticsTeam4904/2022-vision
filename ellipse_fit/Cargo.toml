@@ -8,3 +8,4 @@ edition = "2021"
 [dependencies]
 stdvis-core = { path = "../standard-vision/stdvis-core" }
 vision_tapes = { path = "../vision_tapes" }
+nalgebra = "0.30.1"
