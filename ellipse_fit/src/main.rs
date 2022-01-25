@@ -219,10 +219,11 @@ mod test_pose_rotation {
         let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 2.);
         assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 3.), 1e-6));
     }
+
     #[test]
     fn chain_poses_orientation_identity_offsets_1() {
         let pose1 = Pose::from_orientation(Point::new(1., 0., 0.), 0.);
-        let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(2., -1., 1.), 0.), 1e-6));
+        let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.).with_dist(1.);
+        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., -1., 1.), 0.).with_shift(1.), 1e-6));
     }
 }

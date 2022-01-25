@@ -79,6 +79,7 @@ impl Pose {
 
     /// check if two poses are within epsilon of each other (both delta pos and each orientation)
     pub fn like(&self, other: &Self, epsilon: f64) -> bool {
+        println!("yrp1 {:.3} {:.3} {:.3} yrp2 {:.3} {:.3} {:.3}", self.yaw, self.roll, self.pitch, other.yaw, other.roll, other.pitch);
         (self.pos - other.pos).mag() <= epsilon &&
         (self.yaw - other.yaw).abs() <= epsilon && 
         (self.roll - other.roll).abs() <= epsilon &&
@@ -95,9 +96,12 @@ impl Pose {
             &Vector3::new(self.look().x, self.look().z, self.look().y),
             &Vector3::new(self.up().x,   self.up().z,   self.up().y)
         );
-        println!("rotation {:?}", rot.euler_angles());
-        let pos = rot * Vector3::new(next.pos.x, next.pos.z, next.pos.y);
-        let pos = Point::new(pos.x, pos.y, pos.z);
+        //println!("rotation {:?}", rot * Vector3::new(0., 0., 1.));
+        println!("rotation {:?}", rot * Vector3::z());
+        let pos = Vector3::new(next.pos.x, next.pos.z, next.pos.y);
+        let pos = rot * pos;
+        let pos = Point::new(pos.x, pos.z, pos.y) + self.pos;
+        println!("wheeeeeeeee {:?}, yrp {} {} {}", pos, self.yaw + next.yaw, self.roll + next.roll, self.pitch + next.pitch);
         Self::new(pos, self.yaw + next.yaw, self.roll + next.roll, self.pitch + next.pitch)
     }
 }
