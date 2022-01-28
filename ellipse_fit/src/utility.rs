@@ -80,10 +80,11 @@ impl Pose {
     /// check if two poses are within epsilon of each other (both delta pos and each orientation)
     pub fn like(&self, other: &Self, epsilon: f64) -> bool {
         println!("yrp1 {:.3} {:.3} {:.3} yrp2 {:.3} {:.3} {:.3}", self.yaw, self.roll, self.pitch, other.yaw, other.roll, other.pitch);
+        println!("look {:?} {:?}", self.look(), other.look());
+        println!("up   {:?} {:?}", self.up(), other.up());
         (self.pos - other.pos).mag() <= epsilon &&
-        (self.yaw - other.yaw).abs() <= epsilon && 
-        (self.roll - other.roll).abs() <= epsilon &&
-        (self.pitch - other.pitch).abs() <= epsilon
+        (self.look() - other.look()).mag() <= epsilon && 
+        (self.up() - other.up()).mag() <= epsilon
     }
 
     /// get a copy of the object `scalar` times further away
