@@ -9,3 +9,4 @@ edition = "2021"
 stdvis-core = { path = "../standard-vision/stdvis-core" }
 vision_tapes = { path = "../vision_tapes" }
 nalgebra = "0.30.1"
+opencv = "0.62.0"

@@ -1,5 +1,7 @@
+use opencv::core::Point_;
+use opencv::types::VectorOfPoint;
+use stdvis_core::{traits::ImageData, types::Image};
 use vision_tapes::utility::Point;
-use stdvis_core::{ traits::ImageData, types::Image };
 
 mod utility;
 use utility::Pose;
@@ -15,17 +17,26 @@ fn fit_flat_circle(a: Point, b: Point, c: Point) -> Point {
     let det = (a.x - b.x) * (b.y - c.y) - (b.x - c.x) * (a.y - b.y);
 
     println!("determinant: {det}");
-    assert!(det.abs() > f64::EPSILON);  // colinear or smt
+    assert!(det.abs() > f64::EPSILON); // colinear or smt
 
     let cx = (bc * (b.y - c.y) - cd * (a.y - b.y)) / det;
     let cy = (cd * (a.x - b.x) - bc * (b.x - c.x)) / det;
     Point::new(cx, cy, b.z)
 }
 
+fn fit_ellipse(vertices: Vec<VectorOfPoint>) {
+    let points = vertices.iter().map(|v| {
+        v.iter().fold(
+            Point_::<i32>::new(0, 0),
+            |a, b| if (a.y > b.y) { a } else { b },
+        )
+    });    
+}
+
 fn main() {
-    let a = Point::new(-8.8,  0.9, 0.);
-    let b = Point::new( 2.5, -2.7, 0.);
-    let c = Point::new( 8.3,  6.5, 0.);
+    let a = Point::new(-8.8, 0.9, 0.);
+    let b = Point::new(2.5, -2.7, 0.);
+    let c = Point::new(8.3, 6.5, 0.);
     let p = fit_flat_circle(a, b, c);
     println!("Hello, {p:?}");
 }
@@ -37,7 +48,7 @@ impl Nearby for Point {
     fn near(self, other: &Point, thresh: f64) -> bool {
         let delta = self - *other;
         println!("dist: {}", delta.mag());
-        return delta.squared_mag() <= thresh.powi(2)
+        return delta.squared_mag() <= thresh.powi(2);
     }
 }
 
@@ -47,29 +58,29 @@ mod test_circle_fit {
 
     #[test]
     fn circle_fit_1() {
-        let a = Point::new(-8.8,  0.9, 0.);
-        let b = Point::new( 2.5, -2.7, 0.);
-        let c = Point::new( 8.3,  6.5, 0.);
+        let a = Point::new(-8.8, 0.9, 0.);
+        let b = Point::new(2.5, -2.7, 0.);
+        let c = Point::new(8.3, 6.5, 0.);
         assert!(fit_flat_circle(a, b, c).near(&Point::new(-1., 5.9, 0.), 1e-1));
     }
     #[test]
     fn circle_fit_2() {
-        let a = Point::new(-30.,  0.9, 0.);
-        let b = Point::new(-19.,  33., 0.);
-        let c = Point::new( 8.3,  6.5, 0.);
+        let a = Point::new(-30., 0.9, 0.);
+        let b = Point::new(-19., 33., 0.);
+        let c = Point::new(8.3, 6.5, 0.);
         assert!(fit_flat_circle(a, b, c).near(&Point::new(-12.2, 12.7, 0.), 1e-1));
     }
     #[test]
     fn circle_fit_3() {
-        let a = Point::new(-30.,  0.9, 0.);
-        let b = Point::new(-19.,  33., 0.);
-        let c = Point::new(-21.,  16., 0.);
+        let a = Point::new(-30., 0.9, 0.);
+        let b = Point::new(-19., 33., 0.);
+        let c = Point::new(-21., 16., 0.);
         assert!(fit_flat_circle(a, b, c).near(&Point::new(-60.4, 29.3, 0.), 1e-1));
     }
     #[test]
     fn circle_fit_4() {
-        let a = Point::new(-30.,  0.9, 0.);
-        let b = Point::new(-19.,  33., 0.);
+        let a = Point::new(-30., 0.9, 0.);
+        let b = Point::new(-19., 33., 0.);
         let c = Point::new(-31.2, -2.74, 0.);
         assert!(fit_flat_circle(a, b, c).near(&Point::new(1503.8, -506.8, 0.), 1e-1));
     }
@@ -78,7 +89,7 @@ mod test_circle_fit {
 #[cfg(test)]
 mod test_pose_rotation {
     use super::*;
-    use std::f64::consts::{ PI, FRAC_PI_4, FRAC_PI_2, FRAC_PI_6 };
+    use std::f64::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_6, PI};
 
     #[test]
     fn up_bijection_1() {
@@ -145,7 +156,10 @@ mod test_pose_rotation {
     #[test]
     /// test scaling
     fn scaled() {
-        assert!(Pose::from_pos(Point::new(1., 1., 2.)).scaled(-3.).pos.near(&Point::new(-3., -3., -6.), 1e-6));
+        assert!(Pose::from_pos(Point::new(1., 1., 2.))
+            .scaled(-3.)
+            .pos
+            .near(&Point::new(-3., -3., -6.), 1e-6));
     }
 
     #[test]
@@ -205,43 +219,65 @@ mod test_pose_rotation {
     fn chain_poses_orientation_identity_left() {
         let pose1 = Pose::from_orientation(Point::new(0., 1., 0.), 0.);
         let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
+        assert!(pose1
+            .chain(&pose2)
+            .like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
     }
     #[test]
     fn chain_poses_orientation_identity_right() {
         let pose1 = Pose::from_orientation(Point::new(1., 1., 1.), 0.);
         let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 0.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
+        assert!(pose1
+            .chain(&pose2)
+            .like(&Pose::from_orientation(Point::new(1., 1., 1.), 0.), 1e-6));
     }
     #[test]
     fn chain_poses_orientation_identity_roll() {
         let pose1 = Pose::from_orientation(Point::new(1., 1., 1.), 1.);
         let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 2.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., 1., 1.), 3.), 1e-6));
+        assert!(pose1
+            .chain(&pose2)
+            .like(&Pose::from_orientation(Point::new(1., 1., 1.), 3.), 1e-6));
     }
 
     #[test]
     fn chain_poses_orientation_identity_offsets_1() {
         let pose1 = Pose::from_orientation(Point::new(1., 0., 0.), 0.);
         let pose2 = Pose::from_orientation(Point::new(1., 1., 1.), 0.).with_dist(1.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(1., -1., 1.), 0.).with_shift(1.), 1e-6));
+        assert!(pose1.chain(&pose2).like(
+            &Pose::from_orientation(Point::new(1., -1., 1.), 0.).with_shift(1.),
+            1e-6
+        ));
     }
     #[test]
     fn chain_poses_orientation_identity_offsets_2() {
         let pose1 = Pose::from_orientation(Point::new(1., 1., 0.), 0.);
         let pose2 = Pose::from_orientation(Point::new(0., 0., 1.), 0.).with_dist(2f64.sqrt());
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(0., 0., 1.), -FRAC_PI_4).with_shift(1.).with_dist(1.), 1e-6));
+        assert!(pose1.chain(&pose2).like(
+            &Pose::from_orientation(Point::new(0., 0., 1.), -FRAC_PI_4)
+                .with_shift(1.)
+                .with_dist(1.),
+            1e-6
+        ));
     }
     #[test]
     fn chain_poses_orientation_identity_offsets_3() {
         let pose1 = Pose::from_orientation(Point::new(0., 1., 0.), PI);
         let pose2 = Pose::from_orientation(Point::new(0., 1., 0.), 0.).with_shift(1.);
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(0., 1., 0.), PI).with_shift(-1.), 1e-6));
+        assert!(pose1.chain(&pose2).like(
+            &Pose::from_orientation(Point::new(0., 1., 0.), PI).with_shift(-1.),
+            1e-6
+        ));
     }
     #[test]
     fn chain_poses_orientation_identity_offsets_4() {
         let pose1 = Pose::from_orientation(Point::new(1., 1., 0.), PI);
         let pose2 = Pose::from_orientation(Point::new(0., 0., 1.), 0.).with_dist(2f64.sqrt());
-        assert!(pose1.chain(&pose2).like(&Pose::from_orientation(Point::new(0., 0., -1.), -FRAC_PI_4).with_shift(1.).with_dist(1.), 1e-6));
+        assert!(pose1.chain(&pose2).like(
+            &Pose::from_orientation(Point::new(0., 0., -1.), -FRAC_PI_4)
+                .with_shift(1.)
+                .with_dist(1.),
+            1e-6
+        ));
     }
 }
