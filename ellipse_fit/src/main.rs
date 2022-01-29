@@ -1,5 +1,8 @@
-use vision_tapes::utility::Point;
+//use vision_tapes::utility::Point;
 use stdvis_core::{ traits::ImageData, types::Image };
+
+mod point;
+use point::Point;
 
 mod utility;
 use utility::Pose;

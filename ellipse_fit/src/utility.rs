@@ -1,4 +1,5 @@
-use vision_tapes::utility::Point;
+//use vision_tapes::utility::Point;
+use super::point::Point;
 use std::f64::consts::PI;
 extern crate nalgebra as na;
 use na::{ Vector3, Rotation3 };
