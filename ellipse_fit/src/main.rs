@@ -2,6 +2,9 @@ use opencv::core::Point_;
 use opencv::types::VectorOfPoint;
 use stdvis_core::{traits::ImageData, types::Image};
 use vision_tapes::utility::Point;
+use nalgebra as na;
+use nalgebra::dvector;
+use nalgebra::matrix;
 
 mod utility;
 use utility::Pose;
@@ -24,21 +27,38 @@ fn fit_flat_circle(a: Point, b: Point, c: Point) -> Point {
     Point::new(cx, cy, b.z)
 }
 
-fn fit_ellipse(vertices: Vec<VectorOfPoint>) {
-    let points = vertices.iter().map(|v| {
-        v.iter().fold(
-            Point_::<i32>::new(0, 0),
-            |a, b| if (a.y > b.y) { a } else { b },
-        )
-    });    
+fn fit_ellipse() {
+    // let points = vertices.iter().map(|v| {
+    //     v.iter().fold(
+    //         Point_::<i32>::new(0, 0),
+    //         |a, b| if (a.y > b.y) { a } else { b },
+    //     )
+    // });
+    let theta = dvector![0,0,0,0,0,0].transpose();
+    let points = vec![Point_::<i32>::new(2, 1), Point_::<i32>::new(0, 2), Point_::<i32>::new(1, 1)]; 
+    let mut M = na::Matrix6::from_element(0i32);    
+    for p in points {
+	let u = dvector![p.x*p.x, p.x*p.y, p.y*p.y, p.x, p.y, 1].transpose();	
+	M += theta.clone().transpose() *
+	    u.clone() * u.transpose() *
+	    theta.clone(); // TODO find a way around this .clone()
+    }
+    let tmp: na::Matrix2<i32> = matrix![1,0; 0,0];
+    let tmp2: na::Matrix3<i32> = matrix![0,0,2; 0,-1,0; 2,0,0];
+    let F = tmp.kronecker(&tmp2);
+    // dbg!(F);
+    // dbg!(theta.transpose() * M);
+    // let loss = (theta.transpose() * M * theta)/(theta.transpose() * F * theta);
+    // dbg!(loss);
 }
 
 fn main() {
-    let a = Point::new(-8.8, 0.9, 0.);
-    let b = Point::new(2.5, -2.7, 0.);
-    let c = Point::new(8.3, 6.5, 0.);
-    let p = fit_flat_circle(a, b, c);
-    println!("Hello, {p:?}");
+    fit_ellipse();
+    // let a = Point::new(-8.8, 0.9, 0.);
+    // let b = Point::new(2.5, -2.7, 0.);
+    // let c = Point::new(8.3, 6.5, 0.);
+    // let p = fit_flat_circle(a, b, c);
+    // println!("Hello, {p:?}");
 }
 
 pub trait Nearby {
